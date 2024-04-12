@@ -283,6 +283,14 @@ class _Cell(BlockItemContainer):
     def width(self, value):
         self._tc.width = value
 
+    @property
+    def bg_color(self):
+        """The background color of the cell."""
+        return self._tc.bg_color
+
+    @bg_color.setter
+    def bg_color(self, value):
+        self._tc.bg_color = value
 
 class _Column(Parented):
     """Table column."""

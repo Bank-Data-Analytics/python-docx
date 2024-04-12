@@ -260,6 +260,12 @@ class ST_HexColorAuto(XsdStringEnumeration):
 
     _members = (AUTO,)
 
+class ST_HexColorClear(XsdStringEnumeration):
+    """Valid values for <w:xMerge val=""> attribute."""
+
+    CLEAR = "clear"
+
+    _members = (CLEAR,)
 
 class ST_HpsMeasure(XsdUnsignedLong):
     """Half-point measure, e.g. 24.0 represents 12.0 points."""

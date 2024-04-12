@@ -13,6 +13,9 @@ from docx.oxml.simpletypes import (
     ST_TblLayoutType,
     ST_TblWidth,
     ST_TwipsMeasure,
+    ST_HexColorClear,
+    ST_HexColorAuto,
+    ST_HexColor,
     XsdInt,
 )
 from docx.oxml.xmlchemy import (
@@ -220,11 +223,12 @@ class CT_Tbl(BaseOxmlElement):
             xml += (
                 "    <w:tc>\n"
                 "      <w:tcPr>\n"
-                '        <w:tcW w:type="dxa" w:w="%d"/>\n'
+                #'        <w:tcW w:type="dxa" w:w="%d"/>\n'
+                '        <w:tcW w:type="auto" w:w="0"/>\n'
                 "      </w:tcPr>\n"
                 "      <w:p/>\n"
                 "    </w:tc>\n"
-            ) % col_width.twips
+            )# % col_width.twips
         return xml
 
 
@@ -280,6 +284,7 @@ class CT_TblPr(BaseOxmlElement):
     )
     tblStyle = ZeroOrOne("w:tblStyle", successors=_tag_seq[1:])
     bidiVisual = ZeroOrOne("w:bidiVisual", successors=_tag_seq[4:])
+    tblW = ZeroOrOne("w:tblW", successors=_tag_seq[7:])
     jc = ZeroOrOne("w:jc", successors=_tag_seq[8:])
     tblLayout = ZeroOrOne("w:tblLayout", successors=_tag_seq[13:])
     del _tag_seq
@@ -315,8 +320,14 @@ class CT_TblPr(BaseOxmlElement):
 
     @autofit.setter
     def autofit(self, value: bool):
-        tblLayout = self.get_or_add_tblLayout()
-        tblLayout.type = "autofit" if value else "fixed"
+        if value:
+            self._remove_tblLayout()
+            tblW = self.get_or_add_tblW()
+            tblW.autofit = True
+        else:
+            self._remove_tblW()
+            tblLayout = self.get_or_add_tblLayout()
+            tblLayout.type = "fixed"
 
     @property
     def style(self):
@@ -334,6 +345,22 @@ class CT_TblPr(BaseOxmlElement):
             return
         self._add_tblStyle(val=value)
 
+class CT_TcColor(BaseOxmlElement):
+    """Used for ``<w:shd>`` and ``<w:tcW>`` elements and many others, to specify a
+    table cell color."""
+    val = RequiredAttribute("w:val", ST_HexColorClear)
+    color = RequiredAttribute("w:color", ST_HexColorAuto)
+    fill = RequiredAttribute("w:fill", ST_HexColor)
+
+    @property
+    def bg_color(self):
+        return self.fill
+
+    @bg_color.setter
+    def bg_color(self, value):
+        self.val = "clear"
+        self.color = "auto"
+        self.fill = value
 
 class CT_TblWidth(BaseOxmlElement):
     """Used for ``<w:tblW>`` and ``<w:tcW>`` elements and many others, to specify a
@@ -357,6 +384,16 @@ class CT_TblWidth(BaseOxmlElement):
     def width(self, value):
         self.type = "dxa"
         self.w = Emu(value).twips
+
+    @property
+    def autofit(self):
+        return self.type == "auto"
+    
+    @autofit.setter
+    def autofit(self, value):
+        if value:
+            self.type = "auto"
+            self.w = Emu(0).twips
 
 
 class CT_Tc(BaseOxmlElement):
@@ -504,6 +541,18 @@ class CT_Tc(BaseOxmlElement):
         """
         if self.width and other_tc.width:
             self.width += other_tc.width
+
+    @property
+    def bg_color(self):
+        tcPr = self.tcPr
+        if tcPr is None:
+            return None
+        return tcPr.bg_color
+
+    @bg_color.setter
+    def bg_color(self, value):
+        tcPr = self.get_or_add_tcPr()
+        tcPr.bg_color = value
 
     @property
     def _grid_col(self):
@@ -734,6 +783,7 @@ class CT_TcPr(BaseOxmlElement):
     tcW = ZeroOrOne("w:tcW", successors=_tag_seq[2:])
     gridSpan = ZeroOrOne("w:gridSpan", successors=_tag_seq[3:])
     vMerge = ZeroOrOne("w:vMerge", successors=_tag_seq[5:])
+    shd = ZeroOrOne("w:shd", successors=_tag_seq[7:])
     vAlign = ZeroOrOne("w:vAlign", successors=_tag_seq[12:])
     del _tag_seq
 
@@ -802,6 +852,17 @@ class CT_TcPr(BaseOxmlElement):
         tcW = self.get_or_add_tcW()
         tcW.width = value
 
+    @property
+    def bg_color(self):
+        shd = self.shd
+        if shd is None:
+            return None
+        return shd.bg_color
+
+    @bg_color.setter
+    def bg_color(self, value):
+        shd = self.get_or_add_shd()
+        shd.bg_color = value
 
 class CT_TrPr(BaseOxmlElement):
     """``<w:trPr>`` element, defining table row properties."""

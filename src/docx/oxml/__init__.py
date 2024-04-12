@@ -150,6 +150,7 @@ from .table import (  # noqa
     CT_TblLayoutType,
     CT_TblPr,
     CT_TblWidth,
+    CT_TcColor,
     CT_Tc,
     CT_TcPr,
     CT_TrPr,
@@ -168,11 +169,13 @@ register_element_cls("w:tblStyle", CT_String)
 register_element_cls("w:tc", CT_Tc)
 register_element_cls("w:tcPr", CT_TcPr)
 register_element_cls("w:tcW", CT_TblWidth)
+register_element_cls("w:tblW", CT_TblWidth)
 register_element_cls("w:tr", CT_Row)
 register_element_cls("w:trHeight", CT_Height)
 register_element_cls("w:trPr", CT_TrPr)
 register_element_cls("w:vAlign", CT_VerticalJc)
 register_element_cls("w:vMerge", CT_VMerge)
+register_element_cls("w:shd", CT_TcColor)
 
 from .text.font import (  # noqa
     CT_Color,
